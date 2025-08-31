@@ -1,7 +1,4 @@
-# Build and deploy to GitHub Pages by pushing the `dist/` folder to the `gh-pages` branch.
-# This workflow avoids using the deprecated `actions/upload-artifact@v3` path by using
-# `peaceiris/actions-gh-pages` to publish the build output directly.
-name: Deploy to GitHub Pages (gh-pages)
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -10,8 +7,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,11 +28,23 @@ jobs:
       - name: Build site
         run: npm run build
 
-      - name: Deploy to gh-pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Configure Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          publish_branch: gh-pages
-          user_name: github-actions
-          user_email: github-actions@github.com
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Download Pages artifact
+        uses: actions/download-pages-artifact@v2
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
